@@ -11,6 +11,8 @@ export class StocksComponent implements OnInit {
   stockPickerForm: FormGroup;
   symbol: string;
   period: string;
+  fromMaxDate = new Date();
+  toMaxDate = new Date();
 
   quotes$ = this.priceQuery.priceQueries$;
 
@@ -28,16 +30,42 @@ export class StocksComponent implements OnInit {
   constructor(private fb: FormBuilder, private priceQuery: PriceQueryFacade) {
     this.stockPickerForm = fb.group({
       symbol: [null, Validators.required],
-      period: [null, Validators.required]
+      period: [null],
+      fromDatePicker: [null],
+      toDatePicker: [null]
     });
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.stockPickerForm.get('fromDatePicker').valueChanges.subscribe((value) => {
+      if (value) {
+        this.stockPickerForm.get('period').setValue(null);
+      }
+    });
+    this.stockPickerForm.get('toDatePicker').valueChanges.subscribe((value) => {
+      if (value) {
+        this.stockPickerForm.get('period').setValue(null);
+      }
+    });
+    this.stockPickerForm.get('period').valueChanges.subscribe((value) => {
+      if (value) {
+        this.stockPickerForm.get('fromDatePicker').setValue(null);
+        this.stockPickerForm.get('toDatePicker').setValue(null);
+      }
+    });
+  }
 
   fetchQuote() {
     if (this.stockPickerForm.valid) {
-      const { symbol, period } = this.stockPickerForm.value;
-      this.priceQuery.fetchQuote(symbol, period);
+      const { symbol, period, fromDatePicker, toDatePicker } = this.stockPickerForm.value;
+      if (fromDatePicker && toDatePicker) {
+        this.priceQuery.fetchQuote(symbol, 'max');
+      } else if(period !== null){
+        this.priceQuery.fetchQuote(symbol, period);
+      }
+      else {
+        console.log("No time-frame selected");
+      }
     }
   }
 }
